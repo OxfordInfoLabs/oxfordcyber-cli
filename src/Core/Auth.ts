@@ -1,6 +1,8 @@
 import Config from "./Config";
 import Api from "./Api";
 
+var getMAC = require('getmac');
+
 var liveInquirer = require('inquirer');
 
 /**
@@ -45,15 +47,21 @@ export default class Auth {
                 }
             ]).then((config: any) => {
 
+                let macAddress: string = "";
+                getMAC.getMac((err: any, returnedAddress: any) => {
+                    macAddress = returnedAddress;
 
-                let userAccessToken = this._api.callSyncMethod("/guest/auth/accessToken", "POST", {}, {
-                    emailAddress: config.emailAddress,
-                    password: config.password
-                }, "string");
+                    this._api.callMethod("/guest/auth/accessToken", "POST", {}, {
+                        emailAddress: config.emailAddress,
+                        password: config.password,
+                        secondaryToken: macAddress
+                    }, "string").then((userAccessToken: string) => {
+                        this._config.userToken = userAccessToken;
+                        resolve(true);
+                    });
 
-                console.log(userAccessToken);
+                });
 
-                resolve(true);
 
             });
         });

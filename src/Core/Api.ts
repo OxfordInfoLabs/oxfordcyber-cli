@@ -23,90 +23,53 @@ export default class Api {
 
 
     /**
-     * Call sync method
-     *
-     * @param requestPath
-     * @param method
-     * @param params
-     * @param payload
-     * @param returnClass
+     * Convenient ping method
      */
-    public callSyncMethod(requestPath: string, method: string = "GET", params: any = {}, payload: any = null, returnClass: any): any {
-        return this.callMethod(requestPath, method, params, payload, returnClass, true);
+    public ping(){
+        return this.callMethod("/cli/util/ping");
     }
-
-
-    /**
-     * Call ssync method
-     *
-     * @param requestPath
-     * @param method
-     * @param params
-     * @param payload
-     * @param returnClass
-     */
-    public callAsyncMethod(requestPath: string, method: string = "GET", params: any = {}, payload: any = null, returnClass: any): Promise<any> {
-        return this.callMethod(requestPath, method, params, payload, returnClass, false);
-    }
-
 
     /**
      * Call a method on the remote web service, using the passed options.
      */
-    protected callMethod(requestPath: string, method: string = "GET", params: any = {}, payload: any = null, returnClass: any, synchronous: boolean): any {
+    public callMethod(requestPath: string, method: string = "GET", params: any = {}, payload: any = null, returnClass: any = "string"): any {
 
-        let url = this._config.apiEndpoint + "/" + requestPath;
-
-        let macAddress: string = "";
-        getMAC.getMac((err: any, returnedAddress: any) => {
-            macAddress = returnedAddress;
-        });
-
-        let authParams = {
-            "userAccessToken": this._config.userToken,
-            "secondaryToken": macAddress
-        };
+        return new Promise((resolve, reject) => {
 
 
-        let getParams: any = Object.assign({}, authParams);
+            let url = this._config.apiEndpoint + "/" + requestPath;
 
-        // Also assign any params to the object.
-        getParams = Object.assign(getParams, params);
+            let macAddress: string = "";
+            getMAC.getMac((err: any, returnedAddress: any) => {
 
-        let paramsAsStrings: string[] = [];
-        Object.keys(getParams).forEach(function (key) {
-            if (getParams[key] !== undefined)
-                paramsAsStrings.push(key + "=" + getParams[key]);
-        });
-
-        if (paramsAsStrings.length > 0)
-            url += "?" + paramsAsStrings.join("&");
-
-        // If we have a payload, ensure we remap _ properties back in object modes
-        if (payload) {
-            payload = this._processPayload(payload);
-        }
+                macAddress = returnedAddress;
 
 
-        if (synchronous) {
-
-            var res = syncRequest(method, url, payload ? {
-                json: payload
-            } : null);
-
-            var rawBody = res.body.toString();
-            var body = rawBody ? JSON.parse(res.body.toString()) : {message: null};
-
-            if (res.statusCode != 200) {
-                throw (body.message);
-            } else {
-                return this._processReturnValue(body, returnClass);
-            }
+                let authParams = {
+                    "userAccessToken": this._config.userToken,
+                    "secondaryToken": macAddress
+                };
 
 
-        } else {
+                let getParams: any = Object.assign({}, authParams);
 
-            return new Promise((resolve, reject) => {
+                // Also assign any params to the object.
+                getParams = Object.assign(getParams, params);
+
+                let paramsAsStrings: string[] = [];
+                Object.keys(getParams).forEach(function (key) {
+                    if (getParams[key] !== undefined)
+                        paramsAsStrings.push(key + "=" + getParams[key]);
+                });
+
+                if (paramsAsStrings.length > 0)
+                    url += "?" + paramsAsStrings.join("&");
+
+                // If we have a payload, ensure we remap _ properties back in object modes
+                if (payload) {
+                    payload = this._processPayload(payload);
+                }
+
 
                 asyncRequest(method, url, payload ? {
                     json: payload
@@ -124,7 +87,8 @@ export default class Api {
 
             });
 
-        }
+        });
+
 
     }
 
